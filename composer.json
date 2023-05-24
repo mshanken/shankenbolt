@@ -1,6 +1,6 @@
 {
-    "name": "bolt/bolt",
-    "description": "Sophisticated, lightweight & simple CMS",
+    "name": "mshanken/shankenbolt",
+    "description": "M.Shanken's own copy of 3.7.5 of BoltCMS",
     "homepage": "http://bolt.cm",
     "keywords": [
         "CMS",
