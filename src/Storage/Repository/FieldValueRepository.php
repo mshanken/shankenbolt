@@ -17,11 +17,11 @@ class FieldValueRepository extends Repository
     public function queryExistingFields($id, $contentType, $field)
     {
         $query = $this->createQueryBuilder()
-            ->select('grouping, id', 'name')
+            ->select('`grouping`, id', 'name')
             ->where('content_id = :id')
             ->andWhere('contenttype = :contenttype')
             ->andWhere('name = :name')
-            ->orderBy('grouping', 'ASC')
+            ->orderBy('`grouping`', 'ASC')
             ->setParameters([
                 'id'          => $id,
                 'contenttype' => $contentType,
