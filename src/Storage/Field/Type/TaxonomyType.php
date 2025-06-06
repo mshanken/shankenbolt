@@ -63,38 +63,50 @@ class TaxonomyType extends JoinTypeBase
     public function load(QueryBuilder $query, ClassMetadata $metadata)
     {
         $field = $this->mapping['fieldname'];
-        $target = $this->mapping['target'];
-        $boltname = $metadata->getBoltName();
-
-        if (is_array($this->mapping['data']) && $this->mapping['data']['has_sortorder']) {
-            $order = "$field.sortorder";
-            $query->addSelect($this->getPlatformGroupConcat("$field.sortorder", $order, '_' . $field . '_sortorder',
-                $query));
-        } else {
-            $order = "$field.id";
+        
+        // Check if the WHERE clause references taxonomy fields for this field type
+        $whereClause = (string) $query->getQueryPart('where');
+        
+        // If the WHERE clause mentions this taxonomy field, we need to load it
+        if (stripos($whereClause, $field . '.slug') !== false || 
+            stripos($whereClause, $field . '.name') !== false ||
+            stripos($whereClause, $field . '.id') !== false) {
+            
+            // Continue with existing taxonomy loading code...
+            $target = $this->mapping['target'];
+            $boltname = $metadata->getBoltName();
+    
+            if (is_array($this->mapping['data']) && $this->mapping['data']['has_sortorder']) {
+                $order = "$field.sortorder";
+                $query->addSelect($this->getPlatformGroupConcat("$field.sortorder", $order, '_' . $field . '_sortorder',
+                    $query));
+            } else {
+                $order = "$field.id";
+            }
+    
+            $from = $query->getQueryPart('from');
+    
+            if (isset($from[0]['alias'])) {
+                $alias = $from[0]['alias'];
+            } else {
+                $alias = $from[0]['table'];
+            }
+    
+            $quotedField = $query->getConnection()->quoteIdentifier($field);
+    
+            $query
+                ->addSelect($this->getPlatformGroupConcat("$field.id", $order, '_' . $field . '_id', $query))
+                ->addSelect($this->getPlatformGroupConcat("$field.slug", $order, '_' . $field . '_slug', $query))
+                ->addSelect($this->getPlatformGroupConcat("$field.name", $order, '_' . $field . '_name', $query))
+                ->addSelect($this->getPlatformGroupConcat("$field.taxonomytype", $order, '_' . $field . '_taxonomytype',
+                    $query))
+                ->leftJoin($alias, $target, $quotedField,
+                    "$alias.id = $quotedField.content_id AND $quotedField.contenttype='$boltname' AND $quotedField.taxonomytype='$field'")
+                ->addGroupBy("$alias.id")
+            ;
         }
-
-        $from = $query->getQueryPart('from');
-
-        if (isset($from[0]['alias'])) {
-            $alias = $from[0]['alias'];
-        } else {
-            $alias = $from[0]['table'];
-        }
-
-        $quotedField = $query->getConnection()->quoteIdentifier($field);
-
-        $query
-            ->addSelect($this->getPlatformGroupConcat("$field.id", $order, '_' . $field . '_id', $query))
-            ->addSelect($this->getPlatformGroupConcat("$field.slug", $order, '_' . $field . '_slug', $query))
-            ->addSelect($this->getPlatformGroupConcat("$field.name", $order, '_' . $field . '_name', $query))
-            ->addSelect($this->getPlatformGroupConcat("$field.taxonomytype", $order, '_' . $field . '_taxonomytype',
-                $query))
-            ->leftJoin($alias, $target, $quotedField,
-                "$alias.id = $quotedField.content_id AND $quotedField.contenttype='$boltname' AND $quotedField.taxonomytype='$field'")
-            ->addGroupBy("$alias.id")
-        ;
-
+        // If no taxonomy fields are referenced in WHERE clause, skip taxonomy loading for performance
+    
         return null;
     }
 
