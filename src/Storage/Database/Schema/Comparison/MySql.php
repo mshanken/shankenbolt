@@ -52,5 +52,15 @@ class MySql extends BaseComparator
                 unset($diff->changedColumns[$key]);
             }
         }
+
+        // VanHook improvements June 2025
+        // Only ignore removed/changed indexes, keep warnings for missing ones
+        if (isset($diff->removedIndexes)) {
+            $diff->removedIndexes = [];
+        }
+        if (isset($diff->changedIndexes)) {
+            $diff->changedIndexes = [];
+        }
+        // Keep $diff->addedIndexes untouched
     }
 }
