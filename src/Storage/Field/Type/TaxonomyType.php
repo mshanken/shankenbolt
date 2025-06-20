@@ -60,7 +60,7 @@ class TaxonomyType extends JoinTypeBase
      *
      * @return QueryBuilder|null
      */
-    public function load(QueryBuilder $query, ClassMetadata $metadata)
+    public function loadVanHookOld(QueryBuilder $query, ClassMetadata $metadata)
     {
         $field = $this->mapping['fieldname'];
         
@@ -110,7 +110,7 @@ class TaxonomyType extends JoinTypeBase
         return null;
     }
 
-    public function loadDeprecated(QueryBuilder $query, ClassMetadata $metadata)
+    public function load(QueryBuilder $query, ClassMetadata $metadata)
     {
         $field = $this->mapping['fieldname'];
         $target = $this->mapping['target'];
