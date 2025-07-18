@@ -275,6 +275,27 @@ class ImageRuntime
      */
     private function getThumbnailUri(Thumbnail $thumb)
     {
+        // Updated to use CDN instead of ws-cms-thumbs service
+        $fileName = $thumb->getFileName();
+        if ($fileName === null || $fileName === '') {
+            return false;
+        }
+        $relative = $this->urlGenerator->generate(
+            'thumb',
+            [
+                'width'  => $thumb->getWidth(),
+                'height' => $thumb->getHeight(),
+                'action' => $thumb->getScale(),
+                'file'   => $thumb->getFileName(),
+            ]
+        );
+        $relative = ltrim($relative, '/');
+        return 'https://mshanken.imgix.net/wso/bolt/' . $relative;
+    }
+
+    private function getThumbnailUriDeprecated(Thumbnail $thumb)
+    {
+        echo '<hr>getThumbnailUri Deprecated called';
         $fileName = $thumb->getFileName();
         if ($fileName === null || $fileName === '') {
             return false;
@@ -292,8 +313,6 @@ class ImageRuntime
     }
 
     /**
-     * Get the thumbnail relative URI, using an alias.
-     *
      * @param string|null $fileName
      * @param string      $alias
      *
