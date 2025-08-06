@@ -31,7 +31,7 @@
         "bolt/session": "^1.1",
         "bolt/themes": "^2.0",
         "bolt/thumbs": "^3.4",
-        "mshanken/utilphp": "dev-main",
+        "mshanken/utilphp": "dev-master",
         "cocur/slugify": "^3.2",
         "composer/composer": "^2",
         "doctrine/cache": "^1.9",
