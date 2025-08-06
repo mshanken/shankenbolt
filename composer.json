@@ -126,5 +126,7 @@
     ],
     "extra": {
         "public-dir": "public"
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
