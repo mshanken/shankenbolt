@@ -9,6 +9,12 @@
         "Symfony"
     ],
     "license": "MIT",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/mshanken/utilphp"
+        }
+    ],
     "require": {
         "bolt/collection": "^1.1",
         "bolt/common": "^1.0",
@@ -120,11 +126,5 @@
     ],
     "extra": {
         "public-dir": "public"
-    },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/mshanken/utilphp"
-        }
-    ]
+    }
 }
