@@ -120,5 +120,11 @@
     ],
     "extra": {
         "public-dir": "public"
-    }    
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/mshanken/utilphp"
+        }
+    ]
 }
