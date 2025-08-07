@@ -9,17 +9,6 @@
         "Symfony"
     ],
     "license": "MIT",
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/mshanken/utilphp"
-        }
-    ],
-    "replace": {
-        "brandonwamboldt/utilphp": "*"
-    },
-    "minimum-stability": "dev",
-    "prefer-stable": true,
     "require": {
         "bolt/collection": "^1.1",
         "bolt/common": "^1.0",
@@ -31,7 +20,7 @@
         "bolt/session": "^1.1",
         "bolt/themes": "^2.0",
         "bolt/thumbs": "^3.4",
-        "mshanken/utilphp": "dev-master",
+        "brandonwamboldt/utilphp": "^1.1",
         "cocur/slugify": "^3.2",
         "composer/composer": "^2",
         "doctrine/cache": "^1.9",
