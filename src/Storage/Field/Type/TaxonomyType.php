@@ -48,69 +48,111 @@ class TaxonomyType extends JoinTypeBase
         return null;
     }
 
-    /**
-     * For the taxonomy field the load event modifies the query to fetch taxonomies related
-     * to a content record from the join table.
-     *
-     * It does this via an additional ->addSelect() and ->leftJoin() call on the QueryBuilder
-     * which includes then includes the taxonomies in the same query as the content fetch.
-     *
-     * @param QueryBuilder  $query
-     * @param ClassMetadata $metadata
-     *
-     * @return QueryBuilder|null
-     */
-    public function loadVanHookOld(QueryBuilder $query, ClassMetadata $metadata)
+    public function load(QueryBuilder $query, ClassMetadata $metadata)
     {
         $field = $this->mapping['fieldname'];
         
         // Check if the WHERE clause references taxonomy fields for this field type
         $whereClause = (string) $query->getQueryPart('where');
         
-        // If the WHERE clause mentions this taxonomy field, we need to load it
-        if (stripos($whereClause, $field . '.slug') !== false || 
-            stripos($whereClause, $field . '.name') !== false ||
-            stripos($whereClause, $field . '.id') !== false) {
-            
-            // Continue with existing taxonomy loading code...
-            $target = $this->mapping['target'];
-            $boltname = $metadata->getBoltName();
-    
-            if (is_array($this->mapping['data']) && $this->mapping['data']['has_sortorder']) {
-                $order = "$field.sortorder";
-                $query->addSelect($this->getPlatformGroupConcat("$field.sortorder", $order, '_' . $field . '_sortorder',
-                    $query));
-            } else {
-                $order = "$field.id";
-            }
-    
-            $from = $query->getQueryPart('from');
-    
-            if (isset($from[0]['alias'])) {
-                $alias = $from[0]['alias'];
-            } else {
-                $alias = $from[0]['table'];
-            }
-    
-            $quotedField = $query->getConnection()->quoteIdentifier($field);
-    
-            $query
-                ->addSelect($this->getPlatformGroupConcat("$field.id", $order, '_' . $field . '_id', $query))
-                ->addSelect($this->getPlatformGroupConcat("$field.slug", $order, '_' . $field . '_slug', $query))
-                ->addSelect($this->getPlatformGroupConcat("$field.name", $order, '_' . $field . '_name', $query))
-                ->addSelect($this->getPlatformGroupConcat("$field.taxonomytype", $order, '_' . $field . '_taxonomytype',
-                    $query))
-                ->leftJoin($alias, $target, $quotedField,
-                    "$alias.id = $quotedField.content_id AND $quotedField.contenttype='$boltname' AND $quotedField.taxonomytype='$field'")
-                ->addGroupBy("$alias.id")
-            ;
+        // Check if taxonomy fields are being filtered
+        $hasTaxonomyFilter = stripos($whereClause, $field . '.slug') !== false || 
+                            stripos($whereClause, $field . '.name') !== false ||
+                            stripos($whereClause, $field . '.id') !== false;
+        
+        // Check if this looks like a single record query (detail page)
+        $isSingleRecord = $this->isSingleRecordQuery($whereClause);
+        
+        // Check if we're on an admin edit page
+        $isAdminEdit = $this->isAdminEditPage();
+        
+        // Only load taxonomies if:
+        // 1. Taxonomy fields are being filtered on, OR
+        // 2. It appears to be a single record query (detail page), OR
+        // 3. We're on an admin edit page
+        if (!$hasTaxonomyFilter && !$isSingleRecord && !$isAdminEdit) {
+            return null; // Skip expensive joins for list pages
         }
-        // If no taxonomy fields are referenced in WHERE clause, skip taxonomy loading for performance
+        
+        // Continue with existing taxonomy loading code...
+        $target = $this->mapping['target'];
+        $boltname = $metadata->getBoltName();
+    
+        if (is_array($this->mapping['data']) && $this->mapping['data']['has_sortorder']) {
+            $order = "$field.sortorder";
+            $query->addSelect($this->getPlatformGroupConcat("$field.sortorder", $order, '_' . $field . '_sortorder',
+                $query));
+        } else {
+            $order = "$field.id";
+        }
+    
+        $from = $query->getQueryPart('from');
+    
+        if (isset($from[0]['alias'])) {
+            $alias = $from[0]['alias'];
+        } else {
+            $alias = $from[0]['table'];
+        }
+    
+        $quotedField = $query->getConnection()->quoteIdentifier($field);
+    
+        $query
+            ->addSelect($this->getPlatformGroupConcat("$field.id", $order, '_' . $field . '_id', $query))
+            ->addSelect($this->getPlatformGroupConcat("$field.slug", $order, '_' . $field . '_slug', $query))
+            ->addSelect($this->getPlatformGroupConcat("$field.name", $order, '_' . $field . '_name', $query))
+            ->addSelect($this->getPlatformGroupConcat("$field.taxonomytype", $order, '_' . $field . '_taxonomytype',
+                $query))
+            ->leftJoin($alias, $target, $quotedField,
+                "$alias.id = $quotedField.content_id AND $quotedField.contenttype='$boltname' AND $quotedField.taxonomytype='$field'")
+            ->addGroupBy("$alias.id")
+        ;
     
         return null;
     }
+    
+    /**
+     * Check if this query looks like it's loading a single record (detail page)
+     * Uses simple string matching to avoid QueryBuilder API issues
+     */
+    private function isSingleRecordQuery($whereClause)
+    {
+        // Look for ID-based queries (common for detail pages)
+        // This covers patterns like: id = :id, t.id = :id, articles.id = :id, etc.
+        if (preg_match('/\b\w*\.?id\s*=\s*:\w+/i', $whereClause) || 
+            preg_match('/\b\w*\.?id\s*=\s*\d+/i', $whereClause)) {
+            return true;
+        }
+        
+        // Look for slug-based queries (also common for detail pages)
+        if (preg_match('/\b\w*\.?slug\s*=\s*:/i', $whereClause)) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Check if we're on an admin edit page
+     */
+    private function isAdminEditPage()
+    {
+        $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+        
+        // Check for admin edit patterns
+        if (strpos($requestUri, '/admin/editcontent/') !== false) {
+            return true;
+        }
+        
+        // Check for other admin patterns if needed
+        if (strpos($requestUri, '/bolt/editcontent/') !== false) {
+            return true;
+        }
+        
+        return false;
+    }
 
-    public function load(QueryBuilder $query, ClassMetadata $metadata)
+
+    public function loadOriginal(QueryBuilder $query, ClassMetadata $metadata)
     {
         $field = $this->mapping['fieldname'];
         $target = $this->mapping['target'];
