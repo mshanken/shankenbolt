@@ -320,7 +320,7 @@ class ImageRuntime
             }
             
             // Build the URL with query parameters
-            return 'https://mshanken.imgix.net/wso/' . $filePath . 
+            return 'https://mshanken.imgix.net/wso/bolt/' . $filePath . 
                    '?w=' . $width . 
                    '&h=' . $height . 
                    '&fit=' . $fit . 
@@ -328,7 +328,7 @@ class ImageRuntime
         }
         
         // If the pattern doesn't match, return the original URL
-        return 'https://mshanken.imgix.net/wso/' . $relativePath;
+        return 'https://mshanken.imgix.net/wso/bolt/' . $relativePath;
     }
     
     private function getThumbnailUriDeprecated(Thumbnail $thumb)
