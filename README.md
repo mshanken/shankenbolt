@@ -1,8 +1,10 @@
-Note: in order for these changes to go live with the next auto-deploy, you must locally run 
+**Note: As of November 2025 in order for these changes to go live with the next auto-deploy, you must locally run**
 
+```
 composer update bolt/bolt
+```
 
-This will force an update of the composer.lock file so that it points to your latest commit.
+**This will force an update of the composer.lock file so that it points to your latest commit.**
 
 
 | :warning: Note - Not the latest version |
