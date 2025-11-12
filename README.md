@@ -1,3 +1,10 @@
+Note: in order for these changes to go live with the next auto-deploy, you must locally run 
+
+composer update bolt/bolt
+
+This will force an update of the composer.lock file so that it points to your latest commit.
+
+
 | :warning: Note - Not the latest version |
 |:----------------------------------------|
 | This is the repository for Bolt 3. Please know that <br><strong>Bolt 5 has been released</strong>. If you are starting a <br>new project, please use the following:                                
