@@ -25,7 +25,7 @@ module.exports = function (grunt) {
             dest: {
                 js: '../view/js',
                 fonts: '../view/fonts',
-                img: '../view/img',
+                img: 'https://mshanken.imgix.net/wso/bolt/',
                 css: '../view/css'
             }
         },
