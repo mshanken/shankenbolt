@@ -118,16 +118,27 @@ class TaxonomyType extends JoinTypeBase
     {
         // Look for ID-based queries (common for detail pages)
         // This covers patterns like: id = :id, t.id = :id, articles.id = :id, etc.
-        if (preg_match('/\b\w*\.?id\s*=\s*:\w+/i', $whereClause) || 
+        if (preg_match('/\b\w*\.?id\s*=\s*:\w+/i', $whereClause) ||
             preg_match('/\b\w*\.?id\s*=\s*\d+/i', $whereClause)) {
             return true;
         }
-        
+
         // Look for slug-based queries (also common for detail pages)
         if (preg_match('/\b\w*\.?slug\s*=\s*:/i', $whereClause)) {
             return true;
         }
-        
+
+        // Timed publish queries (status + datepublish) - taxonomy must be loaded
+        // so that saving the status change doesn't wipe out existing tags
+        if (preg_match('/\bstatus\s*=\s*:/', $whereClause) && preg_match('/\bdatepublish\b/', $whereClause)) {
+            return true;
+        }
+
+        // Hold/depublish queries (status + datedepublish)
+        if (preg_match('/\bstatus\s*=\s*:/', $whereClause) && preg_match('/\bdatedepublish\b/', $whereClause)) {
+            return true;
+        }
+
         return false;
     }
     
