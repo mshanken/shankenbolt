@@ -319,8 +319,14 @@ class ImageRuntime
                 $fit = 'fill';
             }
             
+            $host = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : '';
+            if (stripos($host, 'winespectator') !== false ) {
+                $imageFolderPath = 'wso';
+            } else {
+                $imageFolderPath = 'cao';
+            }
             // Build the URL with query parameters
-            return 'https://mshanken.imgix.net/wso/bolt/' . $filePath . 
+            return 'https://mshanken.imgix.net/' . $imageFolderPath . '/bolt/' . $filePath . 
                    '?w=' . $width . 
                    '&h=' . $height . 
                    '&fit=' . $fit . 
