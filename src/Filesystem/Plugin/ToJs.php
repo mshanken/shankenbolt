@@ -51,7 +51,8 @@ class ToJs implements PluginInterface
     /**
      * Convert a thumbnail URL path to an Imgix URL with query parameters.
      *
-     * Kept intentionally in sync with ImageRuntime::convertThumbnailToImgixUrl().
+     * This duplicates Bolt\Twig\Runtime\ImageRuntime::convertThumbnailToImgixUrl().
+     * Any change here needs the same change there, and vice versa.
      *
      * @param string $relativePath Path such as '/thumbs/200x150c/path/to/image.jpg'
      *
@@ -60,6 +61,13 @@ class ToJs implements PluginInterface
     private function convertThumbnailToImgixUrl($relativePath)
     {
         $relativePath = ltrim((string) $relativePath, '/');
+
+        $host = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : '';
+        if (stripos($host, 'winespectator') !== false) {
+            $imageFolderPath = 'wso';
+        } else {
+            $imageFolderPath = 'cao';
+        }
 
         // Extract dimensions and action from the path
         if (preg_match('#^thumbs/([0-9]+)x([0-9]+)([a-z])/(.+)$#i', $relativePath, $matches)) {
@@ -79,7 +87,7 @@ class ToJs implements PluginInterface
             }
 
             // Build the URL with query parameters
-            return 'https://mshanken.imgix.net/wso/bolt/' . $filePath .
+            return 'https://mshanken.imgix.net/' . $imageFolderPath . '/bolt/' . $filePath .
                    '?w=' . $width .
                    '&h=' . $height .
                    '&fit=' . $fit .
@@ -87,6 +95,6 @@ class ToJs implements PluginInterface
         }
 
         // If the pattern doesn't match, return the original URL
-        return 'https://mshanken.imgix.net/wso/bolt/' . $relativePath;
+        return 'https://mshanken.imgix.net/' . $imageFolderPath . '/bolt/' . $relativePath;
     }
 }

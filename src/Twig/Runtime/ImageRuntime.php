@@ -295,20 +295,30 @@ class ImageRuntime
 
     /**
      * Convert a thumbnail URL path to an Imgix URL with query parameters
-     * 
+     *
+     * This is duplicated in Bolt\Filesystem\Plugin\ToJs::convertThumbnailToImgixUrl().
+     * Any change here needs the same change there, and vice versa.
+     *
      * @param string $relativePath The relative path with dimensions in format like 'thumbs/54x40c/path/to/image.jpg'
-     * 
+     *
      * @return string The Imgix URL with query parameters
      */
     private function convertThumbnailToImgixUrl($relativePath)
     {
+        $host = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : '';
+        if (stripos($host, 'winespectator') !== false ) {
+            $imageFolderPath = 'wso';
+        } else {
+            $imageFolderPath = 'cao';
+        }
+
         // Extract dimensions and action from the path
         if (preg_match('#^thumbs/([0-9]+)x([0-9]+)([a-z])/(.+)$#i', $relativePath, $matches)) {
             $width = $matches[1];
             $height = $matches[2];
             $action = $matches[3];
             $filePath = $matches[4];
-            
+
             // Determine fit parameter based on action
             $fit = 'crop'; // Default for 'c'
             if ($action === 'r') {
@@ -318,45 +328,22 @@ class ImageRuntime
             } elseif ($action === 'f') {
                 $fit = 'fill';
             }
-            
-            $host = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : '';
-            if (stripos($host, 'winespectator') !== false ) {
-                $imageFolderPath = 'wso';
-            } else {
-                $imageFolderPath = 'cao';
-            }
+
             // Build the URL with query parameters
-            return 'https://mshanken.imgix.net/' . $imageFolderPath . '/bolt/' . $filePath . 
-                   '?w=' . $width . 
-                   '&h=' . $height . 
-                   '&fit=' . $fit . 
+            return 'https://mshanken.imgix.net/' . $imageFolderPath . '/bolt/' . $filePath .
+                   '?w=' . $width .
+                   '&h=' . $height .
+                   '&fit=' . $fit .
                    '&auto=compress,format&sharp=5&vib=20&q=70';
         }
-        
-        // If the pattern doesn't match, return the original URL
-        return 'https://mshanken.imgix.net/wso/bolt/' . $relativePath;
-    }
-    
-    private function getThumbnailUriDeprecated(Thumbnail $thumb)
-    {
-        echo '<hr>getThumbnailUri Deprecated called';
-        $fileName = $thumb->getFileName();
-        if ($fileName === null || $fileName === '') {
-            return false;
-        }
 
-        return $this->urlGenerator->generate(
-            'thumb',
-            [
-                'width'  => $thumb->getWidth(),
-                'height' => $thumb->getHeight(),
-                'action' => $thumb->getScale(),
-                'file'   => $thumb->getFileName(),
-            ]
-        );
+        // If the pattern doesn't match, return the original URL
+        return 'https://mshanken.imgix.net/' . $imageFolderPath . '/bolt/' . $relativePath;
     }
 
     /**
+     * Get the thumbnail relative URI, using an alias.
+     *
      * @param string|null $fileName
      * @param string      $alias
      *
