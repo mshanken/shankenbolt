@@ -162,7 +162,19 @@ class TaxonomyType extends JoinTypeBase
         return false;
     }
 
-
+    /**
+     * Upstream Bolt's original load(), which always joins the taxonomy tables.
+     *
+     * Deliberately kept and unused: load() above skips the join unless it detects
+     * a detail page, an admin edit page, or a taxonomy filter. If that detection
+     * ever guesses wrong and taxonomies come back empty where they're needed,
+     * point load() at this body to restore the old always-join behaviour.
+     *
+     * @param QueryBuilder  $query
+     * @param ClassMetadata $metadata
+     *
+     * @return QueryBuilder|null
+     */
     public function loadOriginal(QueryBuilder $query, ClassMetadata $metadata)
     {
         $field = $this->mapping['fieldname'];
