@@ -18,18 +18,23 @@ class Taxonomy extends ArrayCollection
 {
     public $config;
 
+    /** @var callable|null fn(string $taxonomyType, array $slugs): array slug => name */
+    protected $nameResolver;
+
     /**
      * Taxonomy constructor.
      *
      * @param array          $elements
      * @param MetadataDriver $metadata
+     * @param callable|null  $nameResolver
      */
-    public function __construct(array $elements = [], MetadataDriver $metadata = null)
+    public function __construct(array $elements = [], MetadataDriver $metadata = null, callable $nameResolver = null)
     {
         parent::__construct($elements);
         if ($metadata) {
             $this->config = $metadata->getTaxonomyConfig();
         }
+        $this->nameResolver = $nameResolver;
     }
 
     /**
@@ -42,17 +47,36 @@ class Taxonomy extends ArrayCollection
             return;
         }
         $flatVals = $formValues['taxonomy'];
+        $slugify = Slugify::create();
         foreach ($flatVals as $field => $values) {
             if (!is_array($values)) {
                 continue;
             }
+            foreach ($values as $i => $val) {
+                if (is_array($val) && isset($val['slug'])) {
+                    $values[$i] = $val['slug'];
+                }
+            }
+
+            // The tags widget posts existing tags by slug, so a freeform tag
+            // that isn't in taxonomy.yml would otherwise be saved with its
+            // slug as its name. Recover the name it was originally saved with.
+            $storedNames = [];
+            if ($this->nameResolver) {
+                $unknownSlugs = array_filter($values, function ($val) use ($field, $slugify) {
+                    return !isset($this->config[$field]['options'][$val]) && $val === $slugify->slugify($val);
+                });
+                if ($unknownSlugs) {
+                    $storedNames = call_user_func($this->nameResolver, $field, array_unique($unknownSlugs));
+                }
+            }
+
             foreach ($values as $val) {
                 $order = isset($formValues['taxonomy-order'][$field]) ? $formValues['taxonomy-order'][$field] : 0;
-                if (is_array($val) && isset($val['slug'])) {
-                    $val = $val['slug'];
-                }
                 if (isset($this->config[$field]['options'][$val])) {
                     $name = $this->config[$field]['options'][$val];
+                } elseif (isset($storedNames[$val])) {
+                    $name = $storedNames[$val];
                 } else {
                     $name = $val;
                 }
@@ -61,7 +85,7 @@ class Taxonomy extends ArrayCollection
                     'content_id'   => $entity->getId(),
                     'contenttype'  => (string) $entity->getContenttype(),
                     'taxonomytype' => $field,
-                    'slug'         => Slugify::create()->slugify($val),
+                    'slug'         => $slugify->slugify($val),
                     'sortorder'    => $order,
                 ]);
                 $this->add($taxEntity);
