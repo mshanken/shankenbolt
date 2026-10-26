@@ -7,6 +7,7 @@ use Bolt\Events\QueryEvents;
 use Bolt\Exception\InvalidRepositoryException;
 use Bolt\Storage\Query\TaxonomyQueryResultset;
 use Bolt\Storage\Repository;
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\QueryBuilder;
 
 class TaxonomyRepository extends Repository
@@ -44,6 +45,45 @@ class TaxonomyRepository extends Repository
         $this->getEntityManager()->getEventManager()->dispatch(QueryEvents::EXECUTE, $executeEvent);
 
         return $set;
+    }
+
+    /**
+     * Look up the stored display names for existing taxonomy slugs.
+     *
+     * Rows whose name is the slug itself are ignored, so a tag that was saved
+     * as "Napa Valley" resolves to that rather than "napa-valley". When a slug
+     * has several names, the most-used one wins.
+     *
+     * @param string $taxonomyType
+     * @param array  $slugs
+     *
+     * @return array slug => name
+     */
+    public function getNamesForSlugs($taxonomyType, array $slugs)
+    {
+        if (empty($slugs)) {
+            return [];
+        }
+
+        $query = $this->em->createQueryBuilder()
+            ->select('slug, name, COUNT(*) AS uses')
+            ->from($this->getTableName())
+            ->where('taxonomytype = :taxonomytype')
+            ->andWhere('slug IN (:slugs)')
+            ->andWhere('name <> slug')
+            ->groupBy('slug, name')
+            ->orderBy('uses', 'DESC')
+            ->setParameter('taxonomytype', $taxonomyType)
+            ->setParameter('slugs', array_values($slugs), Connection::PARAM_STR_ARRAY);
+
+        $names = [];
+        foreach ($query->execute()->fetchAll() as $row) {
+            if (!isset($names[$row['slug']])) {
+                $names[$row['slug']] = $row['name'];
+            }
+        }
+
+        return $names;
     }
 
     /**

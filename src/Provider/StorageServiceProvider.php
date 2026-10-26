@@ -213,7 +213,11 @@ class StorageServiceProvider implements ServiceProviderInterface
 
         $app['storage.taxonomy_collection'] = $app->protect(
             function () use ($app) {
-                return new Collection\Taxonomy([], $app['storage.metadata']);
+                $nameResolver = function ($taxonomyType, array $slugs) use ($app) {
+                    return $app['storage']->getRepository(Entity\Taxonomy::class)->getNamesForSlugs($taxonomyType, $slugs);
+                };
+
+                return new Collection\Taxonomy([], $app['storage.metadata'], $nameResolver);
             }
         );
 
